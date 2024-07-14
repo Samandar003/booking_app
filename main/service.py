@@ -21,8 +21,14 @@ def show_available_hours(instit_obj, day):
     return schedule_list
 
 
-
-
+def calculate_perhour(inst_obj, start_time, end_time):
+    duration=end_time.time-start_time
+    total_seconds=duration.total_seconds()
+    hour=total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    total_hours=(minutes*0.1)+hour
+    price=inst_obj.price_hour*total_hours
+    return price, total_hours
 
 # inst_obj=InstitutionModel.objects.all().first()
 # print(show_available_hours(instit_obj=inst_obj, day="firday"))
