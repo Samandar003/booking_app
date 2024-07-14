@@ -42,8 +42,9 @@ class ScheduleModel(models.Model):
     end_time=models.DateTimeField()
     day=models.CharField(choices=DAY_CHOICES, max_length=200)
     institution=models.ForeignKey(InstitutionModel, on_delete=models.CASCADE)
-    client=models.ForeignKey(CustomUserModel, on_delete=models.SET_NULL)
-    
+    client=models.ForeignKey(CustomUserModel, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+        
     def __str__(self):
         return "Schedule of "+self.institution.name
 
