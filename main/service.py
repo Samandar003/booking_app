@@ -19,9 +19,21 @@ def show_available_hours(instit_obj, day):
         if schedule_objs.last().end_time+timedelta(minutes=10)<end_time:
             schedule_list.append([schedule_objs.last().end_time, end_time])
     else:
-        schedule_list.append([start_time.time(), end_time.time()])
+        schedule_list.append([start_time, end_time])
     return schedule_list
 
+def check_time_conflict(start_t, end_t, day, inst):
+    avail_hours=show_available_hours(instit_obj=inst, day=day)
+    right=False
+    workinghours=WorkingHoursModel.objects.get(day=day, institution=inst)
+    if start_t>=workinghours.open_time and end_t<=workinghours.close_time:
+        right = True
+    for x in avail_hours:
+        if start_t<x[0] or end_t<x[0] :
+            return False        
+        if x[1]>start_t>x[0] and end_t>x[1]:
+            return False
+    return True
 
 def calculate_perhour(inst_obj, start_time, end_time):
     duration=end_time.time-start_time
@@ -31,6 +43,8 @@ def calculate_perhour(inst_obj, start_time, end_time):
     total_hours=(minutes*0.1)+hour
     price=inst_obj.price_hour*total_hours
     return price, total_hours
+
+# def time_span_available()
 
 # inst_obj=InstitutionModel.objects.all().first()
 # print(show_available_hours(instit_obj=inst_obj, day="firday"))
