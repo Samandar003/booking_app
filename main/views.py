@@ -87,14 +87,14 @@ class ReserveInstApiView(APIView):
         serializer.is_valid(raise_exception=True)
         start_t=serializer.validated_data.get("start_time")
         end_t=serializer.validated_data.get("end_time")
+        inst=serializer.validated_data.get('institution')
         duration = end_t - start_t
         min_duration = timedelta(minutes=30)
         max_duration = timedelta(hours=4)
         if not min_duration <= duration <= max_duration:
             return Response({'ms':"At least 30 mins, at most 4 hours"}, status=status.HTTP_403_FORBIDDEN)
-        tru_fal=service.check_time_conflict(start_t, end_t, day=serializer.validated_data.get("day"),\
-            inst=serializer.validated_data.get('institution'))
-        # print(tru_fal, ' bool')
+        cost_service=service.calculate_perhour(inst, duration)
+        tru_fal=service.check_time_conflict(start_t, end_t, day=serializer.validated_data.get("day"), inst=inst)
         if tru_fal:
             serializer.save(client=request.user)
             return Response(serializer.data)    

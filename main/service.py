@@ -1,5 +1,6 @@
 from .models import ScheduleModel, InstitutionModel, PostInstitModel, WorkingHoursModel
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 def show_available_hours(instit_obj, day):
     working_day_obj=WorkingHoursModel.objects.filter(day=day, institution=instit_obj).first()
@@ -35,14 +36,13 @@ def check_time_conflict(start_t, end_t, day, inst):
             return False
     return True
 
-def calculate_perhour(inst_obj, start_time, end_time):
-    duration=end_time.time-start_time
+def calculate_perhour(inst_obj, duration):
     total_seconds=duration.total_seconds()
     hour=total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     total_hours=(minutes*0.1)+hour
-    price=inst_obj.price_hour*total_hours
-    return price, total_hours
+    price=float(inst_obj.price_hour)*total_hours
+    return price
 
 # def time_span_available()
 
