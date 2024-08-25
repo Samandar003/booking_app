@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.views import APIView
 from rest_framework import status
-from .serializers import InstitutionModelSerializer, WorkingHoursSerializer, ScheduleModelSerializer
+from .serializers import InstitutionModelSerializer, WorkingHoursSerializer, ScheduleModelSerializer, CardTokensModelSerializer
 from .models import InstitutionModel, PostInstitModel, WorkingHoursModel, ScheduleModel, CardTokensModel
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -11,6 +11,9 @@ from .permissions import IsOwnerOrReadOnly
 from rest_framework.exceptions import NotFound
 from datetime import date, timedelta
 import stripe
+from django.conf import settings
+
+stripe.api_key = settings.STRIPE_SECRET_KEY 
 
 class InstitutionAllViewSet(ViewSet):
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly,)
@@ -116,11 +119,20 @@ class ProcessPaymentApiView(APIView):
             return Response({'error': 'Reservation is already paid.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            token = stripe.Token.create(
+            card={
+                'number': card.number,
+                'exp_month': card.exp_month,
+                'exp_year': card.exp_year,
+                'cvc': card.cvc,
+            },
+        )
+            
             charge = stripe.Charge.create(
                 amount=int(reservation.amount * 100),  # amount in cents
                 currency='usd',
                 description=f'Reservation {reservation_id} payment',
-                source=request.data['stripeToken'],
+                source=token.id
             )
             
             # Update reservation status
@@ -131,3 +143,21 @@ class ProcessPaymentApiView(APIView):
 
         except stripe.error.StripeError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class CardTokensViewSet(ViewSet):
+    def list(self, request):
+        queryset = CardTokensModel.objects.all()
+        serializer = CardTokensModelSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        obj=get_object_or_404(CardTokensModel, pk=pk)
+        serializer=CardTokensModelSerializer(obj, many=False)
+        return Response(serializer.data)
+    
+    def create(self, request):
+        serializer=CardTokensModelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    

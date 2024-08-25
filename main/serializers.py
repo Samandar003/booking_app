@@ -1,5 +1,5 @@
 from rest_framework.serializers import Serializer, ModelSerializer
-from .models import InstitutionModel, ScheduleModel, WorkingHoursModel, PostInstitModel
+from .models import InstitutionModel, ScheduleModel, WorkingHoursModel, PostInstitModel, CardTokensModel
 
 
 
@@ -25,4 +25,7 @@ class ScheduleModelSerializer(ModelSerializer):
         exclude = ['client']
         read_only_fields=['amount', 'status', 'reservation_details']
     
-        
+class CardTokensModelSerializer(ModelSerializer):
+    class Meta:
+        model = CardTokensModel
+        fields="__all__"
