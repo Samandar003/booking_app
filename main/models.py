@@ -60,7 +60,15 @@ class ScheduleModel(models.Model):
     def __str__(self):
         return "Schedule of "+self.institution.name
 
-
+class CardTokensModel(models.Model):
+    user=models.ForeignKey(CustomUserModel, on_delete=models.CASCADE)
+    number=models.CharField(max_length=200)
+    exp_month=models.SmallIntegerField()
+    exp_year=models.IntegerField()
+    cvc=models.IntegerField()
+    
+    def __str__(self):
+        return f"Card {self.number}"
 
 class PostInstitModel(models.Model):
     institution=models.ForeignKey(InstitutionModel, on_delete=models.CASCADE)

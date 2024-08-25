@@ -2,7 +2,7 @@ from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.views import APIView
 from rest_framework import status
 from .serializers import InstitutionModelSerializer, WorkingHoursSerializer, ScheduleModelSerializer
-from .models import InstitutionModel, PostInstitModel, WorkingHoursModel, ScheduleModel
+from .models import InstitutionModel, PostInstitModel, WorkingHoursModel, ScheduleModel, CardTokensModel
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from . import service
@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from .permissions import IsOwnerOrReadOnly
 from rest_framework.exceptions import NotFound
 from datetime import date, timedelta
+import stripe
 
 class InstitutionAllViewSet(ViewSet):
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly,)
@@ -96,7 +97,37 @@ class ReserveInstApiView(APIView):
         cost_service=service.calculate_perhour(inst, duration)
         tru_fal=service.check_time_conflict(start_t, end_t, day=serializer.validated_data.get("day"), inst=inst)
         if tru_fal:
-            serializer.save(client=request.user)
+            serializer.save(client=request.user, amount=cost_service, status="pending")
             return Response(serializer.data)    
         return Response({'ms':"time conflict, reserve at different time"}, status=status.HTTP_403_FORBIDDEN)
     
+
+class ProcessPaymentApiView(APIView):
+    permission_classes=(IsAuthenticated,)
+    def post(self, request, *args, **kwargs):
+        try:
+            card = CardTokensModel.objects.get(user=request.user)
+        except:
+            return Response({'ms':"you have to save your card first"}, status=status.HTTP_403_FORBIDDEN)
+        
+        reservation_id=kwargs.get('id')
+        reservation = ScheduleModel.objects.get(id=reservation_id, client=request.user)
+        if reservation.status == 'paid':
+            return Response({'error': 'Reservation is already paid.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            charge = stripe.Charge.create(
+                amount=int(reservation.amount * 100),  # amount in cents
+                currency='usd',
+                description=f'Reservation {reservation_id} payment',
+                source=request.data['stripeToken'],
+            )
+            
+            # Update reservation status
+            reservation.status = 'paid'
+            reservation.save()
+
+            return Response({'message': 'Payment successful'}, status=status.HTTP_200_OK)
+
+        except stripe.error.StripeError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
