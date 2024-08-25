@@ -18,3 +18,11 @@ class WorkingHoursSerializer(ModelSerializer):
         model=WorkingHoursModel
         exclude = ["day", "open_time", "close_time", "institution"]
         
+        
+class ScheduleModelSerializer(ModelSerializer):
+    class Meta:
+        model=ScheduleModel
+        exclude = ['client']
+        read_only_fields=['amount', 'status', 'reservation_details']
+    
+        
