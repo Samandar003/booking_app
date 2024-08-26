@@ -29,6 +29,7 @@ class InstitutionModel(models.Model):
     
     def __str__(self):
         return f"{self.name} {self.owner}"
+    
 
 DAY_CHOICES = (
         ('monday', 'Monday'),
@@ -59,6 +60,11 @@ class ScheduleModel(models.Model):
         
     def __str__(self):
         return "Schedule of "+self.institution.name
+
+    def make_money(self, owner):
+        objs=ScheduleModel.objects.filter(institution__owner=owner, status="paid")
+        summa=sum(x.amount for x in objs)
+        return summa
 
 class CardTokensModel(models.Model):
     user=models.ForeignKey(CustomUserModel, on_delete=models.CASCADE)
