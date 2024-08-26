@@ -12,7 +12,7 @@ from rest_framework.exceptions import NotFound
 from datetime import date, timedelta
 import stripe
 from django.conf import settings
-
+from users.notifications import send_notification_to_user
 stripe.api_key = settings.STRIPE_SECRET_KEY 
 
 class InstitutionAllViewSet(ViewSet):
@@ -138,7 +138,7 @@ class ProcessPaymentApiView(APIView):
             # Update reservation status
             reservation.status = 'paid'
             reservation.save()
-
+            send_notification_to_user(request.user, "Payment approved", "Come to use the service at ", reservation.start_time)
             return Response({'message': 'Payment successful'}, status=status.HTTP_200_OK)
 
         except stripe.error.StripeError as e:
