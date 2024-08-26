@@ -145,6 +145,7 @@ class ProcessPaymentApiView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class CardTokensViewSet(ViewSet):
+    permission_classes=(IsAuthenticated,)
     def list(self, request):
         queryset = CardTokensModel.objects.all()
         serializer = CardTokensModelSerializer(queryset, many=True)
