@@ -28,6 +28,11 @@ class InstitutionAllViewSet(ViewSet):
     
     def list(self, request):
         search_term = request.query_params.get('search', None)
+        city_query=request.query_params.get('city', None)
+        municip_query=request.query_params.get('municipality', None)
+        queryset=InstitutionModel.objects.all()
+        if city_query and municip_query:
+            queryset=queryset.filter(city=city_query, municipality=municip_query)
         if search_term:
             queryset=queryset.annotate(
                 similarity=TrigramSimilarity('name', search_term)
