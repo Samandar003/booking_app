@@ -13,10 +13,11 @@ from datetime import date, timedelta
 import stripe
 from django.conf import settings
 from users.notifications import send_notification_to_user
+from django.contrib.postgres.search import TrigramSimilarity
 stripe.api_key = settings.STRIPE_SECRET_KEY 
 
 class InstitutionAllViewSet(ViewSet):
-    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly,)
     queryset=InstitutionModel.objects.all()
     
     def create(self, request):
@@ -26,8 +27,12 @@ class InstitutionAllViewSet(ViewSet):
         return Response(serializer.data)
     
     def list(self, request):
-        queryset=self.queryset.order_by("-dislikes")
-        queryset=queryset.order_by("likes")    
+        search_term = request.query_params.get('search', None)
+        if search_term:
+            queryset=queryset.annotate(
+                similarity=TrigramSimilarity('name', search_term)
+            ).filter(similarity__gt=0.3).order_by('-similarity')
+        queryset = queryset.order_by("-dislikes", "likes")
         serializer=InstitutionModelSerializer(queryset, many=True)
         return Response(serializer.data)
     
