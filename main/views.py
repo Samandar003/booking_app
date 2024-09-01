@@ -172,3 +172,15 @@ class CardTokensViewSet(ViewSet):
         serializer.save()
         return Response(serializer.data)
     
+class RateServiceViewSet(ViewSet):
+    permission_classes=(IsAuthenticated,)
+    def create(self, request, *args, **kwargs):
+        service_id=request.data.get('service')    
+        obj=get_object_or_404(InstitutionModel, pk=service_id)
+        like=request.data.get('like')
+        if not like:
+            obj.dislikes+=1
+        else:
+            obj.likes+=1
+        return Response({"ms":"Thank you for your feedback"})    
+        
